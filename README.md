@@ -16,7 +16,7 @@ API REST para gestionar franquicias, sucursales y sus productos.
 ```bash
 git clone https://github.com/yourusername/franchise-test-ms.git
 cd franchise-test-ms
-docker-compose up --build
+docker compose up --build
 ```
 
 Endpoints:
@@ -26,7 +26,7 @@ Endpoints:
 ### 2. Detener servicios
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## Endpoints

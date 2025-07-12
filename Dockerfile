@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM eclipse-temurin:17-jdk AS builder
 
 WORKDIR /app
 
@@ -6,20 +6,22 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
+COPY src src
 
 RUN chmod +x ./gradlew
 
-COPY src src
+RUN curl -o gradle/wrapper/gradle-wrapper.jar \
+    https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradle/wrapper/gradle-wrapper.jar
 
 RUN ./gradlew build -x test --no-daemon
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y curl && apt-get clean
 
 WORKDIR /app
 
-RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
+RUN groupadd -g 1001 appuser && useradd -u 1001 -g appuser -s /bin/bash appuser
 
 COPY --from=builder /app/build/libs/*.jar app.jar
 
@@ -38,5 +40,5 @@ ENTRYPOINT ["java", \
     "-XX:+UseG1GC", \
     "-XX:+UseContainerSupport", \
     "-Djava.security.egd=file:/dev/./urandom", \
-    "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:dev}", \
-    "-jar", "app.jar"] 
+    "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-dev}", \
+    "-jar", "app.jar"]
