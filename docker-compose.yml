@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  #Spring Boot
+  franchise-api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=test_franchise
+      - DB_USERNAME=test_franchise
+      - DB_PASSWORD=p4ssDB1234
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - franchise-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  #MySQL
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=p4ssDB1234
+      - MYSQL_DATABASE=test_franchise
+      - MYSQL_USER=test_franchise
+      - MYSQL_PASSWORD=p4ssDB1234
+      - MYSQL_INITDB_SKIP_TZINFO=1
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "test_franchise", "-pp4ssDB1234"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - franchise-network
+    restart: unless-stopped
+
+  #phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=test_franchise
+      - PMA_PASSWORD=p4ssDB1234
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - franchise-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  franchise-network:
+    driver: bridge 
